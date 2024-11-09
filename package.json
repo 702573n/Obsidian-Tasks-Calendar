@@ -1,0 +1,29 @@
+{
+	"name": "obsidian-tasks-calendar",
+	"version": "2.0.0",
+	"description": "A custom view build with Obsidian-Dataview to display tasks from Obsidian-Tasks and from your daily notes in a highly customisable calendar with a wide variety of views",
+	"main": "main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"adrien": "cp -u main.js manifest.json styles.css \"/c/Users/AdrienBuot/iCloudDrive/iCloud~md~obsidian/Kill Zone/.obsidian/plugins/tasks-calendar/\""
+	},
+	"keywords": [],
+	"author": "702573N",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^16.11.6",
+		"@typescript-eslint/eslint-plugin": "5.29.0",
+		"@typescript-eslint/parser": "5.29.0",
+		"builtin-modules": "3.3.0",
+		"esbuild": "0.17.3",
+		"obsidian": "latest",
+		"tslib": "2.4.0",
+		"typescript": "4.7.4"
+	},
+	"dependencies": {
+		"obsidian-dataview": "^0.5.67",
+		"rrule": "^2.8.1"
+	}
+}
