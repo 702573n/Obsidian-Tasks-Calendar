@@ -20,7 +20,7 @@ export { arrowLeftIcon, arrowRightIcon, filterIcon, monthIcon, weekIcon, listIco
  * List of templates 
  */
 const cellTemplate = (cls: string, weekday: string, dailyNote: string, cellName: string, cellContent: string) => 
-    `<div class='cell ${cls}' data-weekday='${weekday}'><a class='internal-link cellName' ${dailyNote != ""?`href='${dailyNote}'`:""}>${cellName}</a><div class='cellContent'>${cellContent}</div></div>`;
+    `<div class='cell ${cls}' data-weekday='${weekday}'><a class='internal-link cellName' href='${dailyNote}'>${cellName}</a><div class='cellContent'>${cellContent}</div></div>`;
 const taskTemplate = (taskPath: string, cls: string, style: string, title: string, note: string, icon: string, relative: string, taskContent: string) => 
     `<a class='internal-link' href='${taskPath}'><div class='task ${cls}' style='${style}' title='${title}'><div class='inner'><div class='note'>${note}</div><div class='icon'>${icon}</div><div class='description' data-relative='${relative}'>${taskContent}</div></div></div></a>`;
 const taskNumberTemplate = (number: number, cls: string) => `<div class='task taskNumber ${cls}' title='${number}'>${number}</div>`;
@@ -53,21 +53,17 @@ const isTimeBeforeCurrentTime = (t: any) => {
     return false;
 }
 
-const getFilename = (path: string): string | undefined  => {
-    return (path.match(/^(?:.*\/)?([^\/]+?|)(?=(?:\.[^\/.]*)?$)/)||[])[1];
-}
-const capitalize = (str: string): string => {
-	return str[0].toUpperCase() + str.slice(1);
-};
+const getFilename = (path: string): string | undefined  => 
+    (path.match(/^(?:.*\/)?([^\/]+?|)(?=(?:\.[^\/.]*)?$)/)||[])[1];
+const capitalize = (str: string): string => 
+	str[0].toUpperCase() + str.slice(1);
 
-const getCurrent = () => {
-    return {
+const getCurrent = () => ({
         today: moment().format("YYYY-MM-DD"),
         day: moment().format("d"),
         month: moment().format("M"),
         year: moment().format("YYYY")
-    }
-}
+});
 
 const momentToRegex = (momentFormat: any) : string => {
 	momentFormat = momentFormat.replaceAll(".", "\\.");
@@ -96,7 +92,108 @@ const momentToRegex = (momentFormat: any) : string => {
 	momentFormat = momentFormat.replace("ww", "\\d{1,2}");
 
 	return `/^(${momentFormat})$/`;
-};
+}
+const getMeta = (dailyNoteFormat : string, globalTaskFilter: string, disableRecurrence: boolean, tasks: any)  =>{
+    if (!dailyNoteFormat)
+        dailyNoteFormat = "YYYY-MM-DD";
+    if(!globalTaskFilter)
+        globalTaskFilter = "#task";
+    let dailyNoteRegEx = momentToRegex(dailyNoteFormat);
+    for (let task of tasks) {
+        let taskText = task.text;
+        let taskFile = getFilename(task.path);
+        let dueMatch = taskText.match(/\📅\W(\d{4}\-\d{2}\-\d{2})/);
+        let scheduledMatch = taskText.match(/\⏳\W(\d{4}\-\d{2}\-\d{2})/);
+        let startMatch = taskText.match(/\🛫\W(\d{4}\-\d{2}\-\d{2})/);
+        let completionMatch = taskText.match(/\✅\W(\d{4}\-\d{2}\-\d{2})/);
+        let cancelledMatch = taskText.match(/\❌\W(\d{4}\-\d{2}\-\d{2})/);
+        let dailyNoteMatch = taskFile?.match(dailyNoteRegEx);
+        let dailyTaskMatch = taskText.match(/(\d{4}\-\d{2}\-\d{2})/);
+        let repeatMatch = taskText.includes("🔁");
+        let matchResult = taskText.match(/🔁\s*(.*?)\s*[🛫⏳📅⌚]/);
+        if (dueMatch) {
+            task.due = dueMatch[1];
+            task.text = task.text.replace(dueMatch[0], "");
+        };
+        if (scheduledMatch) {
+            task.scheduled = scheduledMatch[1];
+            task.text = task.text.replace(scheduledMatch[0], "");
+        };
+        if (startMatch) {
+            task.start = startMatch[1];
+            task.text = task.text.replace(startMatch[0], "");
+        };
+        if (completionMatch) {
+            task.completion = completionMatch[1];
+            task.text = task.text.replace(completionMatch[0], "");
+        }
+        if(cancelledMatch){
+            task.cancelled = cancelledMatch[1];
+            task.text = task.text.replace(cancelledMatch[0], "");
+        }
+        if(isOverdue(task)){
+            task.type = "overdue";
+            task.typePriority = 1;
+            task.moment = task.due ? moment(task.due) : moment(task.scheduled);
+        }else if(isTimePassed(task)){
+            task.type = "timePassed";
+            task.typePriority = 2;
+            let time = getTime(taskText).split(":");
+            let day = task.due ? moment(task.due) : moment(task.scheduled);
+            task.moment = day.add(parseInt(time[0]), "hours").add(parseInt(time[1]), "minutes");
+        }else if(isDueOrScheduled(task) && !hasTimeFormat(task)){
+            if((task.due && task.scheduled && moment(task.due).isSameOrBefore(task.scheduled)) || task.due){
+                task.type = "due";
+                task.typePriority = 3;
+                task.moment = moment(task.due);
+            }else if(task.scheduled){
+                task.type = "scheduled";
+                task.typePriority = 3;
+                task.moment = moment(task.scheduled);
+            }
+        }else if(isStart(task)){
+            task.type = "start";
+            task.typePriority = 4;
+            task.moment = moment(task.start);
+        }else if(isTime(task)){
+            task.type = "time";
+            task.typePriority = 5;
+            let time = getTime(taskText).split(":");
+            let day = task.due ? moment(task.due) : moment(task.scheduled);
+            task.moment = day.add(parseInt(time[0]), "hours").add(parseInt(time[1]), "minutes");
+        }else if(isDone(task)){
+            task.type = "done";
+            task.typePriority = 6;
+            task.moment = moment(task.completion);
+        }else if(isCancelled(task)){
+            task.type = "cancelled";
+            task.typePriority = 7;
+            if(task.cancelled)
+                task.moment = moment(task.cancelled);
+        }
+        if (dailyNoteMatch && !dailyTaskMatch) {
+            task.dailyNote = moment(dailyNoteMatch[1], dailyNoteFormat).format("YYYY-MM-DD");
+        }
+        if (task.type != "done" && task.type != "cancelled" && repeatMatch) {
+            task.recurrence = true;
+            if(!disableRecurrence){
+                task.recurringValue = matchResult ? matchResult[1] : "";
+            }
+            task.text = task.text.substring(0, taskText.indexOf("🔁"))
+        };
+        
+        if (taskText.includes("⏫")) {
+            task.priority = 1;
+        }else if (taskText.includes("🔼")) {
+            task.priority = 2;
+        }else if (taskText.includes("🔽")) {
+            task.priority = 3;
+        }else {
+            task.priority = 4;
+        }
+        task.text = task.text.replaceAll(globalTaskFilter,"").replaceAll("[[","").replaceAll("]]","").replace(/\[.*?\]/gm,"");
+    }
+}
 
 const getTasks = (tasks : any, date: any) => 
     tasks.filter((t: any) => filterTasks(t, date)).sort((t:any)=>t, "asc", sortTasks);
@@ -133,8 +230,8 @@ const setTaskContentContainer = (status: any,dv: any, date: any) => {
 	return cellContent;
 };
 
-export { getFilename, getCurrent, momentToRegex, getTasks, isOverdue, isTimePassed, isDueOrScheduled, isStart, isTime, isDone, isCancelled, setTaskContentContainer };
-const setStatisticPopUp = (rootNode: HTMLElement, dv: any) => {
+export { getCurrent, getMeta, getTasks, setTaskContentContainer };
+const setStatisticPopUp = (rootNode: HTMLElement) => {
     let element = rootNode.createEl("ul", {cls: "statisticPopup"});
     element.innerHTML =  `
         <li id='statisticDone' data-group='done'></li>
@@ -151,13 +248,12 @@ const setStatisticPopUp = (rootNode: HTMLElement, dv: any) => {
 	setStatisticPopUpEvents(rootNode);
 };
 
-const setWeekViewContext = (rootNode: HTMLElement, dv: any) =>{
-	let activeStyle = Array.from(rootNode.classList).filter(v=>v.startsWith("style"));
+const setWeekViewContext = (rootNode: HTMLElement) =>{
+	let activeStyle = Array.from(rootNode.classList).filter(v=>v.startsWith("style"))[0];
 	let liElements = "";
-	let styles = 11;
-	for (let i=1;i<styles+1;i++) {
+	for (let i=1;i<12;i++) {
         liElements += `
-        <li data-style='style${i}'>
+        <li ${activeStyle==`style${i}` ? `class="active"`:"" } data-style='style${i}'>
             <div class='liIcon iconStyle${i}'>
                 <div class='box'></div>
                 <div class='box'></div>
@@ -172,7 +268,6 @@ const setWeekViewContext = (rootNode: HTMLElement, dv: any) =>{
     let element = rootNode.createEl("ul", {cls: "weekViewContext"});
     element.innerHTML = liElements;
 	rootNode.querySelector("span")!.appendChild(element);
-	rootNode.querySelector(`.weekViewContext li[data-style=${activeStyle}]`)?.classList.add("active");
 	setWeekViewContextEvents(rootNode);
 };
 
@@ -224,10 +319,14 @@ const getMetaFromNote = (task: any, metaName: string, dv: any) => {
     return dv.pages(`"${task.link.path}"`)[metaName][0] || "";
 }
 
-const transColor = (color: string, percent : number) => {
-	let num = parseInt(color.replace("#",""),16), amt = Math.round(2.55 * percent), R = (num >> 16) + amt, B = (num >> 8 & 0x00FF) + amt, G = (num & 0x0000FF) + amt;
-	return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (B<255?B<1?0:B:255)*0x100 + (G<255?G<1?0:G:255)).toString(16).slice(1);
-};
+const transColor = (color: string, percent: number): string => {
+    let num = parseInt(color.replace("#", ""), 16);
+    let amt = Math.round(2.55 * percent);
+    let R = Math.min(255, Math.max(0, (num >> 16) + amt));
+    let G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
+    let B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+    return `#${((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1).toUpperCase()}`;
+}
 
 const filterTasks = (task: any, date: any) => {
     if(task.type == "overdue" && moment(date).isSame(moment(), 'day')){
@@ -254,6 +353,8 @@ const sortTasks = (a: any, b: any) =>{
 }
 
 const IsRecurringThisDay = (task: any, date: any)=>{
+    if(!task.recurringValue)
+        return false;
     try{
         let rule = new RRule({
             ...RRule.fromText(task.recurringValue).origOptions,
@@ -270,18 +371,18 @@ const IsRecurringThisDay = (task: any, date: any)=>{
 }
 
 const setTask = (obj: any, cls: string, dv: any) =>{
-	let lighter = 25;
-	let darker = -40;
-	let noteColor = getMetaFromNote(obj, "color", dv);
-	let textColor = getMetaFromNote(obj, "textColor", dv);
-	let noteIcon = getMetaFromNote(obj, "icon", dv);
-	let taskText = obj.text.replace("'", "&apos;");
-	let taskPath = obj.link.path.replace("'", "&apos;");
+	const lighter = 25;
+	const darker = -40;
+	const noteColor = getMetaFromNote(obj, "color", dv);
+	const textColor = getMetaFromNote(obj, "textColor", dv);
+	const noteIcon = getMetaFromNote(obj, "icon", dv);
+	const taskText = obj.text.replace("'", "&apos;");
+	const taskPath = obj.link.path.replace("'", "&apos;");
+    const relative = obj.due ? moment(obj.due).fromNow() : "";
+	const tasksubpath = obj.header.subpath;
+	const taskLine = tasksubpath ? taskPath+"#"+tasksubpath : taskPath;
 	let taskIcon = "";
-    let relative = obj.due ? moment(obj.due).fromNow() : "";
 	let noteFilename = getFilename(taskPath);
-	let tasksubpath = obj.header.subpath;
-	let taskLine = tasksubpath ? taskPath+"#"+tasksubpath : taskPath;
     let style;
     if(cls.toLocaleLowerCase() == "done")
         taskIcon = "✅";
@@ -308,52 +409,47 @@ const setTask = (obj: any, cls: string, dv: any) =>{
         noteFilename = `${taskIcon} ${noteFilename}`; 
         cls += " noNoteIcon";
     }
-    if (noteColor && textColor) {
- 		style = `--task-background:${noteColor}33;--task-color:${noteColor};--dark-task-text-color:${textColor};--light-task-text-color:${textColor}`;
- 	} else if (noteColor && !textColor){
- 		style = `--task-background:${noteColor}33;--task-color:${noteColor};--dark-task-text-color:${transColor(noteColor, darker)};--light-task-text-color:${transColor(noteColor, lighter)}`;
- 	} else if (!noteColor && textColor ){
- 		style = `--task-background:#7D7D7D33;--task-color:#7D7D7D;--dark-task-text-color:${transColor(textColor, darker)};--light-task-text-color:${transColor(textColor, lighter)}`;
- 	} else {
- 		style = `--task-background:#7D7D7D33;--task-color:#7D7D7D;--dark-task-text-color:${transColor("#7D7D7D", darker)};--light-task-text-color:${transColor("#7D7D7D", lighter)}`;
- 	};
+    
+    const backgroundColor = noteColor ? `${noteColor}33` : `#7D7D7D33`;
+    const taskColor = noteColor || "#7D7D7D";
+    const darkTextColor = textColor || transColor(taskColor, darker);
+    const lightTextColor = textColor || transColor(taskColor, lighter);
+
+    style = `--task-background:${backgroundColor};--task-color:${taskColor};--dark-task-text-color:${darkTextColor};--light-task-text-color:${lightTextColor}`;
+    
 	return taskTemplate(taskLine, cls, style, `${noteFilename}: ${taskText}`, noteFilename, taskIcon, relative, taskText);
-};
+}
 
 const setStatisticPopUpEvents = (rootNode: HTMLElement) => {
 	rootNode.querySelectorAll('.statisticPopup li').forEach(li => li.addEventListener('click', (() => {
 		const group = li.getAttribute("data-group") as string;
 		const liElements = rootNode.querySelectorAll('.statisticPopup li');
-		if (li.classList.contains("active")) {
-			const liElements = rootNode.querySelectorAll('.statisticPopup li');
-			for (const liElement of Array.from(liElements)) {
-				liElement.classList.remove('active');
-			};
+        const active = li.classList.contains("active");
+        for (const liElement of Array.from(liElements)) {
+            liElement.classList.remove('active');
+        }
+		if (active) {
 			rootNode.classList.remove("focus"+capitalize(group));
 		} else {
-			for (const liElement of Array.from(liElements)) {
-				liElement.classList.remove('active');
-			};
 			li.classList.add("active");
 			rootNode.classList.remove.apply(rootNode.classList, Array.from(rootNode.classList).filter(v=>v.startsWith("focus")));
 			rootNode.classList.add("focus"+capitalize(group));
-		};
+		}
 	})));
-};
+}
 
 
 const setWeekViewContextEvents = (rootNode: HTMLElement) => {
 	rootNode.querySelectorAll('.weekViewContext li').forEach(li => li.addEventListener('click', (() => {
-		let selectedStyle = li.getAttribute("data-style")!;
-		const liElements = rootNode.querySelectorAll('.weekViewContext li');
+		const selectedStyle = li.getAttribute("data-style")!;
 		if (!li.classList.contains("active")) {
-			for (const liElement of Array.from(liElements)) {
+			for (const liElement of Array.from(rootNode.querySelectorAll('.weekViewContext li'))) {
 				liElement.classList.remove('active');
 			};
 			li.classList.add("active");
 			rootNode.classList.remove.apply(rootNode.classList, Array.from(rootNode.classList).filter(v=>v.startsWith("style")));
 			rootNode.classList.add(selectedStyle);
 		};
-		rootNode.querySelector(".weekViewContext")?.classList.toggle("active");
+		rootNode.querySelector(".weekViewContext")!.classList.toggle("active");
 	})));
 };

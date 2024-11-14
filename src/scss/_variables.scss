@@ -1,0 +1,39 @@
+$color-red: var(--color-red);
+$icon-color: var(--icon-color);
+$icon-color-active: var(--icon-color-active);
+$background-secondary: var(--background-secondary);
+$nav-item-background-active: var(--nav-item-background-active);
+$text-normal: var(--text-normal);
+$text-faint: var(--text-faint);
+$task-background: var(--task-background);
+$task-color: var(--task-color);
+$background-modifier-hover: var(--background-modifier-hover);
+$interactive-accent-hsl: var(--interactive-accent-hsl);
+$light-task-text-color: var(--light-task-text-color);
+$dark-task-text-color: var(--dark-task-text-color);
+$background-modifier-active-hover:var(--background-modifier-active-hover);
+$icon-size:var(--icon-size);
+$icon-stroke:var(--icon-stroke);
+$background-primary:var(--background-primary);
+$focus-types: (
+    "focusDailyNote": "dailyNote",
+    "focusDone": "done",
+    "focusDue": "due",
+    "focusOverdue": "overdue",
+    "focusRecurrence": "recurrence",
+    "focusScheduled": "scheduled",
+    "focusStart": "start"
+);
+$overdue-color:#ff375f;
+$interactive-accent: var(--interactive-accent);
+$tag-color: var(--tag-color);
+$text-muted:var(--text-muted);
+$interactive-normal: var(--interactive-normal);
+$input-shadow: var(--input-shadow);
+$checkbox-border-color: var(--checkbox-border-color);
+$checkbox-size:var(--checkbox-size);
+$checkbox-border-color-hover:var(--checkbox-border-color-hover);
+$background-modifier-form-field:var(--background-modifier-form-field);
+$input-border-width:var(--input-border-width);
+$background-modifier-border:var(--background-modifier-border);
+$checkbox-marker-color:var(--checkbox-marker-color);

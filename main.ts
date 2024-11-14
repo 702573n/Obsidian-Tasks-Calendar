@@ -9,7 +9,7 @@ export default class TasksCalendar extends Plugin {
 			// Parse the source to extract parameters
 				const lines = source.split('\n');
 				const input: {[name: string]: string} = {};
-				const regex = /^(\w+):\s*(.*)$/; // Expression régulière pour capturer les clés et les valeurs
+				const regex = /^\s*(\w+)\s*:\s*(.*)$/;
 				lines.forEach(line => {
 					const match = line.match(regex);
 					if (match) {
@@ -18,6 +18,7 @@ export default class TasksCalendar extends Plugin {
 						input[key] = value;
 					}
 				});
+				el.parentElement?.classList.remove('markdown-rendered');
 			// Create a new Calendar instance and call displayCalendar
 			new Calendar(this.app).displayCalendar(input, el.createEl('div'));
 		});
