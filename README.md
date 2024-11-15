@@ -198,6 +198,12 @@ disableRecurrence: true
 ```
 Now you can see the recurring tasks every days they will appear in the future, not only the current day, if you want to disable this new feature set this parameter to `true`
 
+#### hideFileWithProps
+```
+hideFileWithProps: Archived, Handled By
+```
+This filter will remove the tasks that are not checked and present in a file with a mentionned property, as `Archived` or `Handled By` in this example
+
 ---
 
 ## Note colors and icon

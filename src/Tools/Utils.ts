@@ -65,7 +65,7 @@ const getCurrent = () => ({
         year: moment().format("YYYY")
 });
 
-const momentToRegex = (momentFormat: any) : string => {
+const momentToRegex = (momentFormat: string) : string => {
 	momentFormat = momentFormat.replaceAll(".", "\\.");
 	momentFormat = momentFormat.replaceAll(",", "\\,");
 	momentFormat = momentFormat.replaceAll("-", "\\-");
@@ -230,7 +230,15 @@ const setTaskContentContainer = (status: any,dv: any, date: any) => {
 	return cellContent;
 };
 
-export { getCurrent, getMeta, getTasks, setTaskContentContainer };
+const updateCounters = (status: any, counter: {[key: string]: number}, currentDate: any) => {
+    for(let key in counter)
+        if(key != "overdue")
+            counter[key] += status.filter((t:any)=>t.type == key).length;
+    counter.recurrence += status.filter((t:any)=>t.recurrence && !(t.type == "overdue" && moment().isSame(currentDate, 'day'))).length;
+    counter.overdue += status.filter((t:any)=>t.type == "overdue" && moment().isSame(currentDate, 'day')).length;
+}
+
+export { getCurrent, getMeta, getTasks, setTaskContentContainer, updateCounters};
 const setStatisticPopUp = (rootNode: HTMLElement) => {
     let element = rootNode.createEl("ul", {cls: "statisticPopup"});
     element.innerHTML =  `
@@ -271,17 +279,18 @@ const setWeekViewContext = (rootNode: HTMLElement) =>{
 	setWeekViewContextEvents(rootNode);
 };
 
-const setStatisticValues = (rootNode: HTMLElement, dueCounter: number, doneCounter: number, overdueCounter: number, startCounter: number, scheduledCounter: number, recurrenceCounter: number, dailyNoteCounter: number) =>{
-	let taskCounter = dueCounter+doneCounter+overdueCounter;
-	let tasksRemaining  = (taskCounter - doneCounter) as string | number;
-	let percentage = Math.round(100/(dueCounter+doneCounter+overdueCounter)*doneCounter);
+const setStatisticValues = (rootNode: HTMLElement, counter: {[key: string]: number}) =>{
+    const { due, done, overdue, start, scheduled, recurrence, dailyNote } = counter;
+	let taskCounter = due+done+overdue;
+	let tasksRemaining  = (taskCounter - done) as string | number;
+	let percentage = Math.round(100/(due+done+overdue)*done);
 	percentage = isNaN(percentage) ? 100 : percentage;
 	if(rootNode.querySelector("button.statistic")){
-        if (dueCounter == 0 && doneCounter == 0) {
+        if (due == 0 && done == 0) {
             rootNode.querySelector("button.statistic")!.innerHTML = calendarHeartIcon;
         } else if (tasksRemaining as number > 0) {
             rootNode.querySelector("button.statistic")!.innerHTML = calendarClockIcon;
-        } else if (dueCounter == 0 && doneCounter != 0) {
+        } else if (due == 0 && done != 0) {
             rootNode.querySelector("button.statistic")!.innerHTML = calendarCheckIcon;
         }
     }
@@ -291,20 +300,20 @@ const setStatisticValues = (rootNode: HTMLElement, dueCounter: number, doneCount
         rootNode.querySelector("button.statistic")!.setAttribute("data-remaining", tasksRemaining.toString());
     }
     if(rootNode.querySelector("#statisticDone"))
-        (rootNode.querySelector("#statisticDone") as HTMLElement)!.innerText = `✅ Done: ${doneCounter}/${taskCounter}`;
+        (rootNode.querySelector("#statisticDone") as HTMLElement)!.innerText = `✅ Done: ${done}/${taskCounter}`;
 	if(rootNode.querySelector("#statisticDue"))
-        (rootNode.querySelector("#statisticDue") as HTMLElement)!.innerText = `📅 Due: ${dueCounter}`;
+        (rootNode.querySelector("#statisticDue") as HTMLElement)!.innerText = `📅 Due: ${due}`;
 	if(rootNode.querySelector("#statisticOverdue"))
-        (rootNode.querySelector("#statisticOverdue") as HTMLElement)!.innerText = `⚠️ Overdue: ${overdueCounter}`;
+        (rootNode.querySelector("#statisticOverdue") as HTMLElement)!.innerText = `⚠️ Overdue: ${overdue}`;
 	if(rootNode.querySelector("#statisticStart"))
-        (rootNode.querySelector("#statisticStart") as HTMLElement)!.innerText = `🛫 Start: ${startCounter}`;
+        (rootNode.querySelector("#statisticStart") as HTMLElement)!.innerText = `🛫 Start: ${start}`;
 	if(rootNode.querySelector("#statisticScheduled"))
-        (rootNode.querySelector("#statisticScheduled") as HTMLElement)!.innerText = `⏳ Scheduled: ${scheduledCounter}`;
+        (rootNode.querySelector("#statisticScheduled") as HTMLElement)!.innerText = `⏳ Scheduled: ${scheduled}`;
 	if(rootNode.querySelector("#statisticRecurrence"))
-        (rootNode.querySelector("#statisticRecurrence") as HTMLElement)!.innerText = `🔁 Recurrence: ${recurrenceCounter}`;
+        (rootNode.querySelector("#statisticRecurrence") as HTMLElement)!.innerText = `🔁 Recurrence: ${recurrence}`;
 	if(rootNode.querySelector("#statisticDailyNote"))
-        (rootNode.querySelector("#statisticDailyNote") as HTMLElement)!.innerText = `📄 Daily Notes: ${dailyNoteCounter}`;
-};
+        (rootNode.querySelector("#statisticDailyNote") as HTMLElement)!.innerText = `📄 Daily Notes: ${dailyNote}`;
+}
 
 const removeExistingView = (rootNode: HTMLElement) =>{
 	if (rootNode.querySelector(`.grid`)) {

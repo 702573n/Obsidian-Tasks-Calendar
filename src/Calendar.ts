@@ -2,11 +2,10 @@ import { App, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { arrowLeftIcon, arrowRightIcon, filterIcon, monthIcon, weekIcon, listIcon } from 'src/Tools/Utils';
 import { cellTemplate, taskNumberTemplate } from 'src/Tools/Utils';
-import { getCurrent, getMeta, getTasks, setTaskContentContainer } from 'src/Tools/Utils';
+import { getCurrent, getMeta, getTasks, setTaskContentContainer, updateCounters } from 'src/Tools/Utils';
 import { setStatisticPopUp, setWeekViewContext, setStatisticValues, removeExistingView } from 'src/Tools/Utils';
 
 export default class Calendar {
-    app: App;
     dv: any;
     tasks: any;
     rootNode: HTMLElement;
@@ -16,7 +15,6 @@ export default class Calendar {
     taskCountOnly: boolean;
     selectedDate: any;
     constructor(app: App){
-        this.app = app;
         this.dv = getAPI(app);
     }
     checkForErrors = (input: {[name: string]: string}, el: HTMLElement) => {
@@ -49,18 +47,31 @@ export default class Calendar {
         return true;
     }
 
-    setTasks = (pages: string) => {
+    setTasks = (pages: string, hideFileWithProps: string) => {
+        let dvPages;
         if (pages == "") {
-            this.tasks = this.dv.pages().file.tasks;
+            dvPages = this.dv.pages();
         } else if (typeof pages === "string" && pages.startsWith("dv.pages")) {
             const pagesContent = pages.match(/\((.*)\)/)?.[1];
             if (pagesContent) {
-                this.tasks = this.dv.pages(pagesContent).file.tasks;
+                dvPages = this.dv.pages(pagesContent);
             } else {
-                this.tasks = this.dv.pages().file.tasks;
+                dvPages = this.dv.pages();
             }
         } else {
-            this.tasks = this.dv.pages(pages).file.tasks;
+            dvPages = this.dv.pages(pages);
+        }
+        if (hideFileWithProps) {
+            this.tasks = dvPages.flatMap((p: any) => {
+                let tasks = p.file.tasks;
+                hideFileWithProps.split(",").forEach((prop: string) => {
+                    if(p[prop.trim()])
+                        tasks = tasks.filter((task: any) => task.checked);
+                });
+                return tasks;
+            });
+        }else{
+            this.tasks = dvPages.file.tasks;
         }
     }
 	displayCalendar = (input: {[name: string]: string}, element: HTMLElement) => {
@@ -68,12 +79,12 @@ export default class Calendar {
             return false;
         }
         let {pages, view, firstDayOfWeek, globalTaskFilter, dailyNoteFolder, dailyNoteFormat, startPosition, upcomingDays, 
-            css, options, taskCountOnly, disableRecurrence} = input;
+            css, options, taskCountOnly, disableRecurrence, hideFileWithProps} = input;
         this.firstDayOfWeek = firstDayOfWeek? parseInt(firstDayOfWeek) : 0;
         this.upcomingDays = upcomingDays? parseInt(upcomingDays) : 7;
         this.dailyNoteFolder = dailyNoteFolder ? dailyNoteFolder : "";
         this.taskCountOnly = taskCountOnly == "true";
-        this.setTasks(pages);
+        this.setTasks(pages, hideFileWithProps);
         // Variables
         let tid = (new Date()).getTime();
         if (view.toLowerCase() == "month") {
@@ -225,18 +236,20 @@ export default class Calendar {
         this.rootNode.querySelector("span")!.appendChild(buttonsEl);
         this.setButtonEvents();
     };
-    getMonth = () => {
+    getMonth = async () => {
         removeExistingView(this.rootNode);
         this.rootNode.querySelector('button.current')!.innerHTML = `<span>${moment(this.selectedDate).format("MMMM")}</span><span>${moment(this.selectedDate).format("YYYY")}</span>`;
         let firstDayOfMonth = parseInt(moment(this.selectedDate).format("d"));
         let lastDateOfMonth = parseInt(moment(this.selectedDate).endOf("month").format("D"));
-        let dueCounter = 0;
-        let doneCounter = 0;
-        let overdueCounter = 0;
-        let startCounter = 0;
-        let scheduledCounter = 0;
-        let recurrenceCounter = 0;
-        let dailyNoteCounter = 0;
+        let counter = {
+            due: 0,
+            done: 0,
+            overdue: 0,
+            start: 0,
+            scheduled: 0,
+            recurrence: 0,
+            dailyNote: 0
+        }
         let monthName = moment(this.selectedDate).format("MMM").replace(".","").substring(0,3);
         let current = getCurrent();
         
@@ -256,177 +269,170 @@ export default class Calendar {
             };
         };
         
+        
+        const tasksPromises = [];
         // Set Wrappers
         let wrappers = "";
         let starts = 0-firstDayOfMonth+this.firstDayOfWeek;
         for (let w=1; w<7; w++) {
-            let wrapper = "";
-            let weekNr = "";
-            let yearNr = "";
-            for (let i=starts;i<starts+7;i++) {
-                if (i==starts) {
-                    weekNr = moment(this.selectedDate).add(i, "days").format("w");
-                    yearNr = moment(this.selectedDate).add(i, "days").format("YYYY");
-                };
-                let currentDate = moment(this.selectedDate).add(i, "days").format("YYYY-MM-DD");
-                let dailyNotePath = this.dailyNoteFolder+"/"+currentDate
-                let weekDay = moment(this.selectedDate).add(i, "days").format("d");
-                let shortDayName = moment(this.selectedDate).add(i, "days").format("D");
-                let longDayName = moment(this.selectedDate).add(i, "days").format("D. MMM");
-    
-                // Filter Tasks
-                let status = getTasks(this.tasks, currentDate);
-                // Count Events Only From Selected Month
-                if (moment(this.selectedDate).format("MM") == moment(this.selectedDate).add(i, "days").format("MM")) {
-                    dueCounter += status.filter((t:any)=>t.type == "due").length;
-                    dueCounter += status.filter((t:any)=>t.type == "scheduled").length;
-                    dueCounter += status.filter((t:any)=>t.type == "dailyNote").length;
-                    doneCounter += status.filter((t:any)=>t.type == "done").length;
-                    startCounter += status.filter((t:any)=>t.type == "start").length;
-                    scheduledCounter += status.filter((t:any)=>t.type == "scheduled").length;
-                    recurrenceCounter += status.filter((t:any)=>t.recurrence && !(t.type == "overdue" && moment().isSame(currentDate, 'day'))).length;
-                    dailyNoteCounter += status.filter((t:any)=>t.type == "dailyNote").length;
-                    overdueCounter += status.filter((t:any)=>t.type == "overdue").length;
-                };
-                
-                // Set New Content Container
-                
-                let cellContent = setTaskContentContainer(status, this.dv, currentDate);
-                let cls = "";
-                // Set prevMonth, currentMonth, nextMonth
-                if (i < 0) {
-                    cls = "prevMonth";
-                } else if (i >= 0 && i < lastDateOfMonth && current.today !== currentDate) {
-                    cls = "currentMonth";
-                } else if ( i >= 0 && i< lastDateOfMonth && current.today == currentDate) {
-                    cls = "currentMonth today";
-                } else if (i >= lastDateOfMonth) {
-                    cls = "nextMonth";
-                };
-                // Set Cell Name And Weekday
-                if(this.taskCountOnly){
-                    cellContent = taskNumberTemplate(status.length, cls);
+            tasksPromises.push((async () => {
+                let wrapper = "";
+                let weekNr = "";
+                let yearNr = "";
+                for (let i=starts;i<starts+7;i++) {
+                    if (i==starts) {
+                        weekNr = moment(this.selectedDate).add(i, "days").format("w");
+                        yearNr = moment(this.selectedDate).add(i, "days").format("YYYY");
+                    };
+                    let currentDate = moment(this.selectedDate).add(i, "days").format("YYYY-MM-DD");
+                    let dailyNotePath = this.dailyNoteFolder+"/"+currentDate
+                    let weekDay = moment(this.selectedDate).add(i, "days").format("d");
+                    let shortDayName = moment(this.selectedDate).add(i, "days").format("D");
+                    let longDayName = moment(this.selectedDate).add(i, "days").format("D. MMM");
+        
+                    // Filter Tasks
+                    let status = getTasks(this.tasks, currentDate);
+                    // Count Events Only From Selected Month
+                    if (moment(this.selectedDate).format("MM") == moment(this.selectedDate).add(i, "days").format("MM")) {
+                        updateCounters(status, counter, currentDate);
+                    };
+                    
+                    // Set New Content Container
+                    
+                    let cellContent = setTaskContentContainer(status, this.dv, currentDate);
+                    let cls = "";
+                    // Set prevMonth, currentMonth, nextMonth
+                    if (i < 0) {
+                        cls = "prevMonth";
+                    } else if (i >= 0 && i < lastDateOfMonth && current.today !== currentDate) {
+                        cls = "currentMonth";
+                    } else if ( i >= 0 && i< lastDateOfMonth && current.today == currentDate) {
+                        cls = "currentMonth today";
+                    } else if (i >= lastDateOfMonth) {
+                        cls = "nextMonth";
+                    }
+                    // Set Cell Name And Weekday
+                    if(this.taskCountOnly){
+                        cellContent = taskNumberTemplate(status.length, cls);
+                    }
+                    if ( parseInt(moment(this.selectedDate).add(i, "days").format("D")) == 1 ) {
+                        wrapper += cellTemplate(`${cls} newMonth`, weekDay, dailyNotePath, longDayName, cellContent);
+                    } else {
+                        wrapper += cellTemplate(cls, weekDay, dailyNotePath, shortDayName, cellContent);
+                    }
                 }
-                if ( parseInt(moment(this.selectedDate).add(i, "days").format("D")) == 1 ) {
-                    wrapper += cellTemplate(`${cls} newMonth`, weekDay, dailyNotePath, longDayName, cellContent);
-                } else {
-                    wrapper += cellTemplate(cls, weekDay, dailyNotePath, shortDayName, cellContent);
-                };
-                
-            };
-            wrappers += `<div class='wrapper'><div class='wrapperButton' data-week='${weekNr}' data-year='${yearNr}'>W${weekNr}</div>${wrapper}</div>`;
-            starts += 7;
+                wrappers += `<div class='wrapper'><div class='wrapperButton' data-week='${weekNr}' data-year='${yearNr}'>W${weekNr}</div>${wrapper}</div>`;
+                starts += 7;
+            })());
         };
         let gridEl = this.rootNode.createEl("div", {cls: "grid"});
         gridEl.innerHTML = `<div class='gridHeads'><div class='gridHead'></div>${gridHeads}</div>
             <div class='wrappers' data-month='${monthName}'>${wrappers}</div>`;
         this.rootNode.querySelector("span")!.appendChild(gridEl);
         this.setWrapperEvents();
-        setStatisticValues(this.rootNode, dueCounter, doneCounter, overdueCounter, startCounter, scheduledCounter, recurrenceCounter, dailyNoteCounter);
+        setStatisticValues(this.rootNode, counter);
         this.rootNode.setAttribute("view", "month");
     }
-    getWeek = () =>{
+    getWeek = async () => {
         removeExistingView(this.rootNode);
-        if(this.rootNode.querySelector('button.current')) 
+        if (this.rootNode.querySelector('button.current')) 
             this.rootNode.querySelector('button.current')!.innerHTML = `<span>${moment(this.selectedDate).format("YYYY")}</span><span>${moment(this.selectedDate).format("[W]w")}</span>`;
+        
         let gridContent = "";
         let currentWeekday = parseInt(moment(this.selectedDate).format("d"));
         let weekNr = moment(this.selectedDate).format("[W]w");
-        let dueCounter = 0;
-        let doneCounter = 0;
-        let overdueCounter = 0;
-        let startCounter = 0;
-        let scheduledCounter = 0;
-        let recurrenceCounter = 0;
-        let dailyNoteCounter = 0;
+        let counter = {
+            due: 0,
+            done: 0,
+            overdue: 0,
+            start: 0,
+            scheduled: 0,
+            recurrence: 0,
+            dailyNote: 0
+        }
         let current = getCurrent();
         
-        for (let i=0-currentWeekday+this.firstDayOfWeek;i<7-currentWeekday+this.firstDayOfWeek;i++) {
-            let currentDate = moment(this.selectedDate).add(i, "days").format("YYYY-MM-DD");
-            let dailyNotePath = this.dailyNoteFolder+"/"+currentDate;
-            let weekDay = moment(this.selectedDate).add(i, "days").format("d");
-            let dayName = moment(currentDate).format("ddd D.");
-            let longDayName = moment(currentDate).format("ddd, D. MMM");
-            
-            // Filter Tasks
-            let status = getTasks(this.tasks, currentDate);
-            
-            // Count Events From Selected Week
-            dueCounter += status.filter((t:any)=>t.type == "due").length;
-            dueCounter += status.filter((t:any)=>t.type == "scheduled").length;
-            dueCounter += status.filter((t:any)=>t.type == "dailyNote").length;
-            doneCounter += status.filter((t:any)=>t.type == "done").length;
-            startCounter += status.filter((t:any)=>t.type == "start").length;
-            scheduledCounter += status.filter((t:any)=>t.type == "scheduled").length;
-            recurrenceCounter += status.filter((t:any)=>t.recurrence && !(t.type == "overdue" && moment().isSame(currentDate, 'day'))).length;
-            dailyNoteCounter += status.filter((t:any)=>t.type == "dailyNote").length;
-            overdueCounter += status.filter((t:any)=>t.type == "overdue").length;
-        
-            // Set New Content Container
-            let cellContent;
-            
-            // Set Cell Name And Weekday
-            let cell;
-            let cls = "";
-            // Set Today, Before Today, After Today
-            if (currentDate < current.today) {
-                cls = "beforeToday";
-            } else if (currentDate == current.today) {
-                cls = "today";
-            } else if (currentDate > current.today) {
-                cls = "afterToday";
-            };
-            // Set Cell Name And Weekday
-            if(this.taskCountOnly){
-                cellContent = taskNumberTemplate(status.length, cls);
-            }else{
-                cellContent = setTaskContentContainer(status, this.dv, currentDate)
-            }
-            if ( parseInt(moment(this.selectedDate).add(i, "days").format("D")) == 1 ) {
-                cell = cellTemplate(cls, weekDay, dailyNotePath, longDayName, cellContent);
-            } else {
-                cell = cellTemplate(cls, weekDay, dailyNotePath, dayName, cellContent);
-            };
+        const tasksPromises = [];
+    
+        for (let i = 0 - currentWeekday + this.firstDayOfWeek; i < 7 - currentWeekday + this.firstDayOfWeek; i++) {
+            tasksPromises.push((async () => {
+                let currentDate = moment(this.selectedDate).add(i, "days").format("YYYY-MM-DD");
+                let dailyNotePath = this.dailyNoteFolder + "/" + currentDate;
+                let weekDay = moment(this.selectedDate).add(i, "days").format("d");
+                let dayName = moment(currentDate).format("ddd D.");
+                let longDayName = moment(currentDate).format("ddd, D. MMM");
                 
-            gridContent += cell;
-        };
-        let gridEl = this.rootNode.createEl("div", {cls: "grid", attr: {"data-week": weekNr}});
+                // Filter Tasks
+                let status = await getTasks(this.tasks, currentDate);
+                
+                // Count Events From Selected Week
+                updateCounters(status, counter, currentDate);
+            
+                // Set New Content Container
+                let cellContent;
+                
+                // Set Cell Name And Weekday
+                let cell;
+                let cls = "";
+                // Set Today, Before Today, After Today
+                if (currentDate < current.today) {
+                    cls = "beforeToday";
+                } else if (currentDate == current.today) {
+                    cls = "today";
+                } else if (currentDate > current.today) {
+                    cls = "afterToday";
+                };
+                // Set Cell Name And Weekday
+                if (this.taskCountOnly) {
+                    cellContent = taskNumberTemplate(status.length, cls);
+                } else {
+                    cellContent = setTaskContentContainer(status, this.dv, currentDate);
+                }
+                if (parseInt(moment(this.selectedDate).add(i, "days").format("D")) == 1) {
+                    cell = cellTemplate(cls, weekDay, dailyNotePath, longDayName, cellContent);
+                } else {
+                    cell = cellTemplate(cls, weekDay, dailyNotePath, dayName, cellContent);
+                };
+                    
+                gridContent += cell;
+            })());
+        }
+    
+        await Promise.all(tasksPromises);
+    
+        let gridEl = this.rootNode.createEl("div", { cls: "grid", attr: { "data-week": weekNr } });
         gridEl.innerHTML = gridContent;
         this.rootNode.querySelector("span")!.appendChild(gridEl);
-        setStatisticValues(this.rootNode, dueCounter, doneCounter, overdueCounter, startCounter, scheduledCounter, recurrenceCounter, dailyNoteCounter);
+        setStatisticValues(this.rootNode, counter);
         this.rootNode.setAttribute("view", "week");
-    };
+    }
     
-    getList = () => {
+    getList = async () => {
         removeExistingView(this.rootNode);
         this.rootNode.querySelector('button.current')!.innerHTML = `<span>${moment(this.selectedDate).format("MMMM")}</span><span>${moment(this.selectedDate).format("YYYY")}</span>`;
         let listContent = "";
-        let dueCounter = 0;
-        let doneCounter = 0;
-        let overdueCounter = 0;
-        let startCounter = 0;
-        let scheduledCounter = 0;
-        let recurrenceCounter = 0;
-        let dailyNoteCounter = 0;
+        let counter = {
+            due: 0,
+            done: 0,
+            overdue: 0,
+            start: 0,
+            scheduled: 0,
+            recurrence: 0,
+            dailyNote: 0
+        }
         let monthName = moment(this.selectedDate).format("MMM").replace(".","").substring(0,3);
         
+        const tasksPromises = [];
         // Loop Days From Current Month
         for (let i=0;i<parseInt(moment(this.selectedDate).endOf('month').format("D"));i++) {
-            let currentDate = moment(this.selectedDate).startOf('month').add(i, "days").format("YYYY-MM-DD");
+            tasksPromises.push((async () =>{
+                let currentDate = moment(this.selectedDate).startOf('month').add(i, "days").format("YYYY-MM-DD");
     
             // Filter Tasks
             let status = getTasks(this.tasks, currentDate);
             
             // Count Events
-            dueCounter += status.filter((t:any)=>t.type == "due").length;
-            dueCounter += status.filter((t:any)=>t.type == "scheduled").length;
-            dueCounter += status.filter((t:any)=>t.type == "dailyNote").length;
-            doneCounter += status.filter((t:any)=>t.type == "done").length;
-            startCounter += status.filter((t:any)=>t.type == "start").length;
-            scheduledCounter += status.filter((t:any)=>t.type == "scheduled").length;
-            recurrenceCounter += status.filter((t:any)=>t.recurrence && !(t.type == "overdue" && moment().isSame(currentDate, 'day'))).length;
-            dailyNoteCounter += status.filter((t:any)=>t.type == "dailyNote").length;
-            overdueCounter += status.filter((t:any)=>t.type == "overdue").length;
+            updateCounters(status, counter, currentDate);
             if (moment().format("YYYY-MM-DD") == currentDate) {
                 let overdueDetails = `<details open class='overdue'><summary>Overdue</summary>${setTaskContentContainer(status, this.dv, currentDate)}</details>`;
                 let todayDetails = `<details open class='today'><summary>Today</summary>${setTaskContentContainer(status, this.dv, currentDate)}</details>`;
@@ -443,13 +449,15 @@ export default class Calendar {
                 
             } else {
                 listContent += `<details open><summary><span>${moment(currentDate).format("dddd, D")}</span><span class='weekNr'>${moment(currentDate).format("[W]w")}</span></summary><div class='content'>${setTaskContentContainer(status, this.dv, currentDate)}</div></details>`
-            };
-        };
+            }
+            })());
+        }
+        await Promise.all(tasksPromises);
         let listContentEl = this.rootNode.createEl("div", {cls: "grid list"});
         listContentEl.innerHTML = listContent;
         listContentEl.setAttribute("data-month", monthName);
         this.rootNode.querySelector("span")!.appendChild(listContentEl);
-        setStatisticValues(this.rootNode, dueCounter, doneCounter, overdueCounter, startCounter, scheduledCounter, recurrenceCounter, dailyNoteCounter);
+        setStatisticValues(this.rootNode, counter);
         this.rootNode.setAttribute("view", "list");
         
         // Scroll To Today If Selected Month Is Current Month
@@ -460,13 +468,13 @@ export default class Calendar {
             listElement.scrollTo(0, scrollPos);
         }
     }
-    setWrapperEvents() {
+    setWrapperEvents = ()  =>{
         this.rootNode.querySelectorAll('.wrapperButton').forEach(wBtn => wBtn.addEventListener('click', (() => {
-            let week = wBtn.getAttribute("data-week");
+            let week = parseInt(wBtn.getAttribute("data-week")!);
             let year = wBtn.getAttribute("data-year");
-            this.selectedDate = moment(moment(year).add(week, "weeks")).startOf("week");
+            this.selectedDate = moment(moment(year).add(week - 1, "weeks")).startOf("week");
             this.rootNode.querySelector(`.grid`)!.remove();
             this.getWeek();
         })));
-    };
+    }
 }
