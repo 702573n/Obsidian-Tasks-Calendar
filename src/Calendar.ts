@@ -434,14 +434,14 @@ export default class Calendar {
             // Count Events
             updateCounters(status, counter, currentDate);
             if (moment().format("YYYY-MM-DD") == currentDate) {
-                let overdueDetails = `<details open class='overdue'><summary>Overdue</summary>${setTaskContentContainer(status, this.dv, currentDate)}</details>`;
-                let todayDetails = `<details open class='today'><summary>Today</summary>${setTaskContentContainer(status, this.dv, currentDate)}</details>`;
+                let overdueDetails = `<details open class='overdue'><summary>Overdue</summary>${setTaskContentContainer(status.filter((t: any)=> t.type == "overdue"), this.dv, currentDate)}</details>`;
+                let todayDetails = `<details open class='today'><summary>Today</summary>${setTaskContentContainer(status.filter((t: any)=> t.type != "overdue"), this.dv, currentDate)}</details>`;
                 
                 // Upcoming
                 let upcomingContent = "";
                 for (let t=1;t<this.upcomingDays+1;t++) {
                     let next = moment(currentDate).add(t, "days").format("YYYY-MM-DD");
-                    upcomingContent += setTaskContentContainer(getTasks(this.tasks,next), this.dv, next);
+                    upcomingContent += setTaskContentContainer(getTasks(this.tasks,next), this.dv, next, true);
                 };
                 let upcomingDetails = `<details open class='upcoming'><summary>Upcoming</summary>${upcomingContent}</details>`;
                 
@@ -468,7 +468,7 @@ export default class Calendar {
             listElement.scrollTo(0, scrollPos);
         }
     }
-    setWrapperEvents = ()  =>{
+    setWrapperEvents = () => {
         this.rootNode.querySelectorAll('.wrapperButton').forEach(wBtn => wBtn.addEventListener('click', (() => {
             let week = parseInt(wBtn.getAttribute("data-week")!);
             let year = wBtn.getAttribute("data-year");
@@ -476,5 +476,5 @@ export default class Calendar {
             this.rootNode.querySelector(`.grid`)!.remove();
             this.getWeek();
         })));
-    }
+    };
 }

@@ -223,14 +223,15 @@ const isDone = (task: any) =>
 const isCancelled = (task: any) =>
     !task.completed && task.checked;
 
-const setTaskContentContainer = (status: any,dv: any, date: any) => {
+const setTaskContentContainer = (status: any,dv: any, date: any, skipRecurrences?: boolean) => {
 	let cellContent = "";
 	for (let task of status) {
+        if(skipRecurrences && task.recurrence) continue;
         let type = task.recurrence && !(task.type == "overdue" && moment().isSame(date, 'day')) ? "recurrence" : task.type;
         cellContent += setTask(task, type, dv)
     };
 	return cellContent;
-};
+}
 
 const updateCounters = (status: any, counter: {[key: string]: number}, currentDate: any) => {
     for(let key in counter)
@@ -413,6 +414,8 @@ const setTask = (obj: any, cls: string, dv: any) =>{
         taskIcon = "🛫";
     else if(cls.toLocaleLowerCase() == "dailynote")
         taskIcon = "📄";
+    else if(cls.toLocaleLowerCase() == "time")
+        taskIcon = "⌚";
 
 	if (noteIcon) {
         noteFilename = `${noteIcon} ${noteFilename}`;
@@ -463,4 +466,4 @@ const setWeekViewContextEvents = (rootNode: HTMLElement) => {
 		};
 		rootNode.querySelector(".weekViewContext")!.classList.toggle("active");
 	})));
-};
+}

@@ -559,7 +559,6 @@
   border: 1px solid var(--nav-item-background-active);
   display: block;
   margin: 5px;
-  overflow: hidden;
 }
 .tasksCalendar[view=list] details.today {
   background: var(--background-modifier-active-hover);
