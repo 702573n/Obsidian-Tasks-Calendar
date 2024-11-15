@@ -227,7 +227,7 @@ const setTaskContentContainer = (status: any,dv: any, date: any, skipRecurrences
 	let cellContent = "";
 	for (let task of status) {
         if(skipRecurrences && task.recurrence) continue;
-        let type = task.recurrence && !(task.type == "overdue" && moment().isSame(date, 'day')) ? "recurrence" : task.type;
+        let type = task.recurrence && !(task.moment && task.moment.isSame(date, 'day')) ? "recurrence" : task.type;
         cellContent += setTask(task, type, dv)
     };
 	return cellContent;
@@ -418,6 +418,10 @@ const setTask = (obj: any, cls: string, dv: any) =>{
         taskIcon = "⌚";
     else if(cls.toLocaleLowerCase() == "timepassed")
         taskIcon = "⏰";
+    if(obj.type != cls){
+        cls += ` ${obj.type}`;
+    }
+
 	if (noteIcon) {
         noteFilename = `${noteIcon} ${noteFilename}`;
     } else {
