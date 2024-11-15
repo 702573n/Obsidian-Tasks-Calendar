@@ -414,9 +414,10 @@ const setTask = (obj: any, cls: string, dv: any) =>{
         taskIcon = "🛫";
     else if(cls.toLocaleLowerCase() == "dailynote")
         taskIcon = "📄";
-    else if(cls.toLocaleLowerCase() == "time" || cls.toLocaleLowerCase() == "timepassed")
+    else if(cls.toLocaleLowerCase() == "time" )
         taskIcon = "⌚";
-
+    else if(cls.toLocaleLowerCase() == "timepassed")
+        taskIcon = "⏰";
 	if (noteIcon) {
         noteFilename = `${noteIcon} ${noteFilename}`;
     } else {
