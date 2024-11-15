@@ -182,7 +182,9 @@ const getMeta = (dailyNoteFormat : string, globalTaskFilter: string, disableRecu
             task.text = task.text.substring(0, taskText.indexOf("🔁"))
         };
         
-        if (taskText.includes("⏫")) {
+        if(taskText.includes("🔺")){
+            task.priority = 0;
+        }else if (taskText.includes("⏫")) {
             task.priority = 1;
         }else if (taskText.includes("🔼")) {
             task.priority = 2;
