@@ -414,7 +414,7 @@ const setTask = (obj: any, cls: string, dv: any) =>{
         taskIcon = "🛫";
     else if(cls.toLocaleLowerCase() == "dailynote")
         taskIcon = "📄";
-    else if(cls.toLocaleLowerCase() == "time" )
+    else if(cls.toLocaleLowerCase() == "time" || (cls.toLocaleLowerCase() == "timepassed" && !obj.moment.isSame(moment(), 'day')))
         taskIcon = "⌚";
     else if(cls.toLocaleLowerCase() == "timepassed")
         taskIcon = "⏰";
