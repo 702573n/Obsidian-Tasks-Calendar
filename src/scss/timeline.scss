@@ -1,0 +1,477 @@
+ @use 'variables' as *;
+ .taskido {
+     cursor: default;
+     user-select: none;
+ 
+     .task {
+         border-radius: 10px;
+         cursor: pointer;
+         display: flex;
+         flex-direction: row;
+         flex-wrap: nowrap;
+         margin: 0;
+         padding: 0;
+ 
+         &.overdue {
+             .timeline .icon svg line {
+                 stroke-width: 2.5px !important;
+                 stroke: $overdue-color !important;
+             }
+ 
+             .info .relative {
+                 color: $overdue-color !important;
+             }
+         }
+ 
+         &.done {
+             .timeline .icon svg {
+                 fill: $interactive-accent !important;
+                 stroke: $interactive-accent !important;
+ 
+                 path:nth-child(1) {
+                     fill: $interactive-accent !important;
+                 }
+                 path:nth-child(2) {
+                     stroke-width: 2.5px;
+                     stroke: $checkbox-marker-color !important;
+                 }
+             }
+         }
+ 
+         .content {
+             color: $text-normal;
+             display: block;
+             font-size: 15px;
+             font-weight: normal;
+             line-height: 22px;
+             white-space: break-word;
+         }
+ 
+         .info {
+             cursor: default;
+             line-height: 22px;
+             padding-bottom: 2px;
+ 
+             &:empty {
+                 display: none;
+             }
+ 
+             .file {
+                 color: $task-color;
+             }
+ 
+             .tag {
+                 background: none !important;
+                 color: $tag-color !important;
+                 cursor: pointer;
+             }
+ 
+             .icon {
+                 height: 15px;
+                 text-align: center;
+             }
+ 
+             .label {
+                 margin-left: 2px;
+             }
+ 
+             svg {
+                 height: 12px;
+                 stroke-width: 1.75px;
+                 width: 12px;
+             }
+             .tag,
+             .repeat,
+             .priority,
+             .relative,
+             .file {
+                 align-items: center;
+                 border-radius: 3px !important;
+                 border: none;
+                 color: var(--text-muted);
+                 display: flex;
+                 flex-direction: row;
+                 flex-wrap: nowrap;
+                 font-size: 9px;
+                 font-weight: normal;
+                 line-height: 1 !important;
+                 margin: 2px 5px 2px 0;
+                 padding: 0;
+                 padding: 0px;
+                 width: auto;
+             }
+ 
+         }
+ 
+         &.done,
+         &.cancelled {
+             .info {
+                 .tag,
+                 .repeat,
+                 .priority,
+                 .relative,
+                 .file {
+                     color: $text-muted !important;
+                     line-height: 0;
+                 }
+             }
+ 
+             .content {
+                 color: $text-muted;
+                 text-decoration: line-through;
+             }
+         }
+         .innerLink,
+         .outerLink {
+             color: $interactive-accent;
+             text-decoration: underline !important;
+         }
+     }
+     .info {
+         .icon {
+             text-align: center;
+             height: 15px;
+         }
+         .label {
+             margin-left: 2px;
+         }
+         svg {
+             height: 12px;
+             width: 12px;
+             stroke-width: 1.75px;
+         }        
+     }
+     .year {
+         color: $text-normal;
+         font-size: 30px;
+         font-weight: bold;
+         margin: 20px 0;
+         text-align: center;
+     }
+     .details {
+         display: flex;
+         flex-direction: column;
+         flex-wrap: nowrap;
+         height: auto;
+         width: 100%;
+ 
+         .today {
+             padding: 30px 0;
+         }
+     }
+     .todayFocus{
+         .todayHeader {
+             color: $interactive-accent;
+         }
+ 
+         .details:not(.today),
+         .year {
+             display: none !important;
+         }
+ 
+         .details.today {
+             padding: 0;
+         }
+     }
+     .todayHeader {
+         border-radius: 10px;
+         cursor: pointer;
+         font-size: 24px;
+         font-weight: bold;
+         margin: 10px 5px;
+         text-align: center;
+     }
+     .counters {
+         align-content: center;
+         display: flex;
+         flex-direction: row;
+         flex-wrap: nowrap;
+         justify-content: center;
+         margin: 20px 0;
+     }
+     .counter {
+         background: $interactive-normal;
+         border-radius: 10px;
+         box-shadow: $input-shadow;
+         color: $text-normal;
+         cursor: pointer;
+         display: flex;
+         flex-direction: column;
+         flex-wrap: nowrap;
+         flex: 1 1 0;
+         margin: 0 5px;
+         max-width: 150px;
+         min-width: 70px;
+         overflow: hidden;
+         padding: 5px;
+         text-align: center;
+ 
+         .label {
+             font-size: 12px;
+             font-weight: normal;
+             overflow: hidden;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+         }
+     }
+     .count {
+         font-size: 18px;
+         font-weight: normal;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         white-space: nowrap;
+     }
+     .dateLine {
+         align-items: center;
+         display: flex;
+         flex-direction: row;
+         flex-wrap: nowrap;
+         justify-content: space-between;
+         margin: 10px 0;
+     }
+     .date {
+         color: $text-normal;
+         font-size: 16px;
+         font-weight: bold;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         white-space: nowrap;
+     }
+     .weekday {
+         color: $text-normal;
+         font-size: 16px;
+         font-weight: normal;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         white-space: nowrap;
+     }
+     .timeline {
+         flex-grow: 0;
+         flex-shrink: 0;
+         width: 50px;
+ 
+         .icon {
+             height: 22px;
+             text-align: center;
+ 
+             svg {
+                 color: $checkbox-border-color;
+                 height: $checkbox-size;
+                 stroke-width: 1.75px;
+                 width: $checkbox-size;
+                 &:hover {
+                     color: $checkbox-border-color-hover;
+                 }
+             }
+         }
+     }
+     .lines {
+         flex-grow: 1;
+         flex-shrink: 1;
+         overflow: hidden;
+     }
+     .line {
+         align-items: center;
+         display: flex;
+         flex-direction: row;
+         flex-wrap: wrap;
+     }
+     .stripe {
+         align-items: center;
+         background: $checkbox-border-color;
+         display: flex;
+         flex-grow: 1;
+         flex-shrink: 1;
+         justify-content: center;
+         margin: 0 auto;
+         width: 1px;
+     }
+     .icon {
+         align-items: center;
+         display: flex;
+         flex-grow: 0;
+         flex-shrink: 0;
+         justify-content: center;
+         text-align: center;
+     }
+     .quickEntryPanel {
+         background: $background-modifier-form-field;
+         border-radius: 10px;
+         border: $input-border-width solid $background-modifier-border;
+         box-shadow: 0 0 5px 0 rgba(0,0,0,0.1);
+         color: $text-normal;
+         display: flex;
+         flex-direction: row;
+         flex-wrap: nowrap;
+         margin: 0 5px 20px 5px;
+         overflow: hidden;
+         padding: 5px;
+ 
+         .left {
+             align-items: center;
+             border-radius: 5px;
+             display: flex;
+             flex-direction: column;
+             flex-grow: 1;
+             flex-shrink: 1;
+             flex-wrap: nowrap;
+             overflow: hidden;
+             padding: 0 5px !important;
+             width: 100%;
+         }
+ 
+         .right {
+             border-radius: 5px;
+             display: block;
+             flex-grow: 1;
+             flex-shrink: 1;
+             overflow: hidden;
+             width: auto;
+         }
+ 
+         input {
+             cursor: text;
+             font-size: 14px;
+             height: 20px;
+             line-height: 20px;
+             margin: 0 !important;
+             overflow: hidden;
+             padding: 0 !important;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+             width: 100%;
+         }
+ 
+         select {
+             color: $text-muted;
+             font-size: 11px;
+             height: 15px;
+             margin: 2.5px 0 !important;
+             overflow: hidden;
+             padding: 0 !important;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+             width: 100%;
+ 
+             option,
+             optgroup {
+                 background: $background-primary;
+                 color: $text-normal;
+                 font-weight: normal;
+             }
+         }
+ 
+         button {
+             align-items: center;
+             color: $text-muted;
+             display: flex;
+             flex-direction: row;
+             flex-wrap: nowrap;
+             height: 100%;
+             justify-content: center;
+             margin: 0 !important;
+             padding: 0 5px !important;
+             width: auto;
+         }
+ 
+         svg {
+             height: 15px;
+             stroke-width: 1.75px;
+             width: 15px;
+         }
+ 
+         select,
+         input,
+         button {
+             background: none !important;
+             border-radius: 0 !important;
+             border: none !important;
+             box-shadow: none !important;
+ 
+             &:active {
+                 border: none !important;
+                 box-shadow: none !important;
+                 transition: none !important;
+             }
+         }
+         select,
+         button {
+             cursor: pointer;
+ 
+             &:hover {
+                 color: $text-normal;
+             }
+         }
+     }
+     .noColor .task {
+         .file {
+             color: $text-muted !important
+         }
+         .info .file {
+             color: $text-muted !important
+         }
+     }
+     a {
+         color: inherit !important;
+         text-decoration: none !important;
+     }
+     span {
+         display: contents;
+     }
+     .timeline,
+     .lines {
+         cursor: default;
+         display: flex;
+         flex-direction: column;
+         flex-wrap: nowrap;
+     }
+     .todoFocus .counter#todo,
+     .todoFilter .counter#todo,
+     .overdueFocus .counter#overdue,
+     .overdueFilter .counter#overdue,
+     .unplannedFocus .counter#unplanned,
+     .unplannedFilter .counter#unplanned {
+         background: hsla($interactive-accent-hsl, 0.2);
+         box-shadow: $input-shadow;
+         color: $interactive-accent;
+     }
+     .noYear .year,
+     .noRepeat .repeat,
+     .noTag .tag,
+     .noPriority .priority,
+     .noFile .task .file,
+     .noHeader .task .header,
+     .noFile .task .info > .file,
+     .noInfo .task .line:nth-child(2),
+     .noDone .year[data-types="done"],
+     .noDone .details[data-types="done"],
+     .noDone .task.done,
+     .noUnplanned .task.unplanned,
+     .noUnplanned .counter#unplanned,
+     .noUnplanned .year[data-types="unplanned"],
+     .noUnplanned .details[data-types="unplanned"],
+     .noRelative .relative,
+     .noQuickEntry .quickEntryPanel,
+     .noCounters .counters {
+         display: none !important;
+     }
+     .todoFocus .details.today .task.due,
+     .todoFocus .details.today .task.scheduled,
+     .todoFocus .details.today .task.process,
+     .todoFocus .details.today .task.start,
+     .overdueFocus .task.overdue,
+     .unplannedFocus .task.unplanned {
+         background: hsla($interactive-accent-hsl, 0.2);
+     }
+     .todoFilter .year:not(.current):not([data-types*="due"][data-types*="scheduled"][data-types*="overdue"]),
+     .todoFilter .details:not(.today):not([data-types*="due"][data-types*="scheduled"][data-types*="overdue"]),
+     .todoFilter .task:not(.due, .scheduled, .process, .start),
+     .overdueFilter .year:not(.current):not([data-types*="overdue"]),
+     .overdueFilter .details:not(.today):not([data-types*="overdue"]),
+     .overdueFilter .task:not(.overdue),
+     .unplannedFilter .year:not(.current):not([data-types*="unplanned"]),
+     .unplannedFilter .details:not(.today):not([data-types*="unplanned"]),
+     .unplannedFilter .task:not(.unplanned) {
+         display: none;
+     }
+ }

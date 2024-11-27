@@ -1,0 +1,822 @@
+ @use 'variables' as *;
+ @use 'sass:map';
+ @use 'sass:list';
+ 
+ .tasksCalendar {
+     margin-top: 20px;
+     span {
+         display: contents;
+     }
+     .buttons {
+         cursor: default;
+         display: flex;
+         flex-direction: row;
+         flex-wrap: nowrap;
+         height: 30px;
+         margin-bottom: 4px;
+         width: 100%;
+     }
+     button {
+         align-items: center;
+         background-color: transparent;
+         background: $background-secondary;
+         border-radius: 5px;
+         border: 1px solid $nav-item-background-active;
+         box-shadow: none;
+         color:$icon-color;
+         cursor: pointer;
+         display: inline-flex;
+         flex: 0;
+         font-size: 14px;
+         font-weight: normal;
+         height: 30px;
+         justify-content: center;
+         outline: none;
+         padding: 4px 6px;
+         user-select: none;
+         white-space: nowrap;
+ 
+         &:nth-child(2),
+         &:nth-child(3),
+         &:nth-child(6) {
+             border-bottom-right-radius: 0;
+             border-right: 0.5px solid $nav-item-background-active;
+             border-top-right-radius: 0;
+             margin-right: 0;
+         }
+ 
+         &:nth-child(3),
+         &:nth-child(4),
+         &:nth-child(7) {
+             border-top-left-radius: 0;
+             border-bottom-left-radius: 0;
+             border-left: 0.5px solid $nav-item-background-active;
+             margin-left: 0;
+         }
+ 
+         
+         &:nth-child(1) {
+             margin-right: 4px;
+         }
+         &:nth-child(8) {
+             margin-left: 4px;
+         }
+ 
+         &.statistic {
+             position: relative;
+ 
+             svg {
+                 stroke:$icon-color;
+             }
+ 
+             &[data-percentage="100"]:after {
+                 display: none !important;
+             }
+ 
+             &:after {
+                 background: $background-secondary;
+                 border-radius: 50%;
+                 border: 1px solid $nav-item-background-active;
+                 color:$icon-color;
+                 content: attr(data-remaining);
+                 font-size: 9px;
+                 font-weight: bold;
+                 height: 14px;
+                 line-height: 14px;
+                 overflow: hidden;
+                 position: absolute;
+                 right: -8px;
+                 text-align: center;
+                 top: -8px;
+                 width: 14px;
+             }
+         }
+     }
+     .current {
+         display: inline;
+         flex: 1;
+         margin: 0 4px;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         white-space: nowrap;
+ 
+         span {
+             &:first-child {
+                 color:$icon-color;
+                 font-weight: bold;
+             }
+             &:last-child {
+                 color: $icon-color-active;
+                 font-weight: normal;
+             }
+         }
+     }
+     svg {
+         height: $icon-size;
+         stroke-width: $icon-stroke;
+         width: $icon-size;
+     }
+     .statisticPopup {
+         right: 0;
+ 
+         &:before{
+             right: 5px;
+             top: -10px;
+         }
+     }
+     .weekViewContext {
+         left: 65px;
+         &:before {
+             left: 5px;
+             top: -10px;
+         }
+ 
+         .liIcon {
+             display: grid !important;
+             height: 18px;
+             margin-right: 5px;
+             padding: 2px;
+             width: 18px;
+ 
+             .box {
+                 background:$icon-color;
+                 border-radius: 1px;
+                 display: grid;
+                 margin: 0.5px;
+                 overflow: hidden;
+                 z-index: 1;
+             }
+         }
+ 
+         li.active .liIcon .box {
+             background: $icon-color-active !important;
+         }
+     }
+     .grid {
+         cursor: default;
+         height: 75vH;
+         overflow: hidden;
+         width: 100%;
+ 
+         &:has(.taskNumber) {
+             height: auto;
+         }
+     }
+     .list {
+         cursor: default;
+         height: 75vH;
+         overflow-x: hidden;
+         overflow-y: auto;
+         width: 100%;
+     }
+     .cell {
+         display: grid;
+         grid-template-columns: 1fr;
+         grid-template-rows: auto 1fr;
+         margin: 1px 0;
+         overflow: hidden;
+         z-index: 1;
+ 
+         &.today .cellName {
+             color: $text-normal;
+             font-weight: bold;
+             opacity: 1;
+         }
+ 
+         &[data-weekday="0"].today .cellName {
+             color: $icon-color-active;
+             font-weight: bold;
+             opacity: 1;
+         }
+     }
+     .cellContent {
+         align-content: start;
+         overflow-x: hidden;
+         overflow-y: auto;
+         padding: 1px 0;
+ 
+         &::-webkit-scrollbar {
+             display: none;
+         }
+     }
+     .cellName {
+         color: $text-normal;
+         display: block;
+         flex-grow: 0;
+         flex-shrink: 0;
+         font-size: 14px;
+         font-weight: normal;
+         margin: 0;
+         opacity: 0.8;
+         overflow: hidden;
+         padding: 0 2px;
+         text-align: left;
+         text-overflow: ellipsis;
+         white-space: nowrap;
+     }
+     .task {
+         background: $task-background;
+         border-radius: 3px;
+         display: block;
+         font-size: 14px;
+         margin: 1px 1px 2px 1px;
+         opacity: 0.8;
+         overflow: hidden;
+         overflow: hidden;
+         padding: 1px;
+ 
+         &.hide {
+             opacity: 0.2;
+         }
+ 
+         .inner {
+             -webkit-box-orient: vertical;
+             -webkit-hyphens: none !important;
+             -webkit-line-clamp: 1;
+             border-radius: 3px;
+             display: -webkit-box;
+             line-height: 1.3;
+             overflow: hidden;
+             overflow: hidden;
+             text-decoration: none !important;
+             text-decoration: none;
+             text-overflow: ellipsis;
+             word-break: break-all !important;
+         }
+ 
+         .note {
+             background: $task-background;
+             display: block;
+             font-size: 9px;
+             overflow: hidden;
+             padding: 1px;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+             width: 100%;
+         }
+ 
+         .icon {
+             display: inline;
+             height: 18px;
+             margin-right: 3px;
+             text-align: center;
+             width: 18px;
+         }
+ 
+         .description {
+             display: inline;
+             padding: 1px;
+ 
+             &:before {
+                 border-radius: 3px;
+                 content: attr(data-relative);
+                 display: inline;
+                 font-size: 9px;
+                 margin-right: 3px;
+                 margin-right: 3px;
+                 padding: 0 3px;
+                 vertical-align: middle;
+             }
+         }
+         &.overdue {
+             .description:before {
+                 background: #ff443a;
+                 color: white;
+             }
+             .inner {
+                 background: repeating-linear-gradient(45deg, $task-background, $task-background 5px, transparent 5px, transparent 10px) !important;
+             }
+         }
+         &:not(.overdue) .description:before {
+             background: black;
+             color: white;
+             display: none;
+         }
+         &.dailyNote .description:before,
+         &.done .description:before,
+         &.cancelled .description:before {
+             display: none !important;
+         }
+         &.cancelled,
+         &.done {
+             background: none !important;
+ 
+             .note {
+                 background: $nav-item-background-active !important;
+                 color: $text-faint !important;
+             }
+             .description {
+                 color: $text-faint !important;
+                 text-decoration: line-through !important;
+             }
+         }
+     }
+     .taskNumber {
+         display:flex;
+         font-size: 30px;
+         font-weight: bold;
+         justify-content: center;
+     }
+     &.mini {
+         margin: 0 auto;
+         max-width: 500px !important;
+ 
+         .grid {
+             height: 400px !important;
+         }
+ 
+         .gridHead,
+         .cellName,
+         .task,
+         .wrapperButton {
+             font-size: 9px !important;
+         }
+ 
+         .wrappers:before,
+         .grid:before {
+             font-size: 70px !important;
+         }
+ 
+         .statisticPopup li,
+         .weekViewContext li {
+             font-size: 9px !important;
+         }
+     }
+     &.noWeekNr {
+         .wrapperButton,
+         .gridHead:first-child {
+             visibility: hidden !important;
+             width: 0 !important;
+         }
+ 
+         .wrapper,
+         .gridHeads {
+             grid-template-columns: 0px 1fr 1fr 1fr 1fr 1fr 1fr 1fr !important;
+         }
+     }
+     &.filter #statisticDone {
+         color: $text-faint !important;
+         pointer-events: none !important;
+     }
+     &.noCellNameEvent .cellName {
+         pointer-events: none !important;
+     }
+     &.lineClamp1 .task .inner {
+         -webkit-line-clamp: 1 !important;
+         white-space: nowrap !important;
+     }
+     &.lineClamp2 .task .inner {
+         -webkit-line-clamp: 2 !important;
+     }
+     &.lineClamp3 .task .inner {
+         -webkit-line-clamp: 3 !important;
+     }
+     &.noLineClamp .task .inner {
+         display: block !important;
+     }
+     a {
+         text-decoration: none !important;
+     }
+     summary {
+         &::marker,
+         &::-webkit-details-marker{
+             content: "" !important;
+             display: none !important;
+         }
+     }
+     .statisticPopup,
+     .weekViewContext {
+         background: $background-secondary;
+         border-radius: 5px;
+         border: 1px solid $nav-item-background-active;
+         box-shadow: 0px 0px 10px 0px $nav-item-background-active;
+         display: none;
+         font-size: 10px;
+         height: auto;
+         list-style: none;
+         margin: 0 !important;
+         padding: 2px !important;
+         position: absolute;
+         width: 150px;
+         width: auto;
+         z-index: 99;
+ 
+         &:before{
+             -webkit-transform:rotate(360deg);
+             border-color: transparent transparent $background-secondary transparent;
+             border-style: solid;
+             border-width: 0 10px 10px 10px;
+             content: "";
+             height: 0px;
+             position: absolute;
+             width: 0px;
+         }
+ 
+         &.active {
+             display: block;
+         }
+ 
+         li {
+             align-items: center;
+             border-radius: 5px;
+             color: $text-normal;
+             cursor: pointer;
+             display: flex;
+             flex-direction: row;
+             flex-wrap: nowrap;
+             font-size: 14px;
+             height: auto;
+             list-style: none;
+             padding: 5px 10px;
+ 
+             &.active {
+                 background: $background-modifier-active-hover;
+                 color: $icon-color-active !important;
+             }
+             &.break {
+                 background: $nav-item-background-active;
+                 border-radius: 0 !important;
+                 height: 1px !important;
+                 margin: 2px 5px !important;
+                 padding: 0 !important;
+             }
+         }
+ 
+         > div {
+             height: 13px;
+             margin: auto 0;
+         }
+     }
+     .cell[data-weekday="0"] .cellName,
+     .gridHead[data-weekday="0"] {
+         color: $icon-color-active;
+     }
+     &.noIcons .task .icon,
+     &:not(.noFilename) .task.noNoteIcon .icon,
+     &.noFilename .task .note,
+     &.filter .task.done, 
+     &.filter .task.cancelled,
+     &.noScheduled .task.scheduled,
+     &.noStart .task.start,
+     &.noDue .task.due,
+     &.noDone .task.done,
+     &.noProcess .task.process,
+     &.noRecurrence .task.recurrence,
+     &.noOverdue .task.overdue,
+     &.noDailyNote .task.dailyNote,
+     &.noLayer .grid .wrappers:before,
+     &.noLayer .grid:before,
+     &.noLayer .list:before,
+     &.noWeekNr .list .weekNr,
+     &.noOverdueFlag .task .description:before {
+         display: none !important;
+     }
+     &[data-weekday="0"].today .cellName {
+         color: $icon-color-active;
+         font-weight: bold;
+         opacity: 1;
+     }
+     &[view="week"] {
+         .cell {
+             border-radius: 5px;
+             border: 1px solid $nav-item-background-active;
+             overflow: hidden;
+ 
+             &.today {
+                 background: $background-modifier-active-hover !important;
+                 border: 1px solid hsla($interactive-accent-hsl, 0.25) !important;
+             }
+         }
+ 
+         .grid {
+             display: grid;
+             gap: 2px 4px;
+ 
+             &:before {
+                 content: attr(data-week);
+             }
+         }
+ 
+         &.style11 {
+             .grid {
+                 height: 300px;
+             }
+             .cell[data-weekday="0"],
+             .cell[data-weekday="6"] {
+                 display: none !important;
+             }
+         }
+     }
+     &[view="month"] {
+         .grid {
+             display: grid;
+             gap: 4px;
+             grid-template-columns: 1fr !important;
+             grid-template-rows: 20px 1fr !important;
+         }
+ 
+         .gridHeads {
+             display: grid;
+             border-radius: 5px;
+             border: 1px solid $nav-item-background-active;
+             grid-template-columns: 20px 1fr 1fr 1fr 1fr 1fr 1fr 1fr !important;
+             height: 20px;
+             width: 100%;
+         }
+ 
+         .gridHead {
+             box-sizing: border-box;
+             display: inline;
+             font-size: 10px;
+             font-size: 14px;
+             font-weight: bold;
+             height: 20px;
+             line-height: 20px;
+             margin: 0;
+             overflow: hidden;
+             text-align: center;
+             text-overflow: ellipsis;
+             white-space: nowrap;
+         }
+         .wrappers {
+             display: grid;
+             gap: 4px 4px;
+             grid-template-columns: 1fr !important;
+             grid-template-rows: repeat(6, calc(100% / 6));
+             height: calc(100% - 20px);
+             min-height: 0;
+         }
+         .wrapper {
+             border-radius: 5px;
+             border: 1px solid $nav-item-background-active;
+             display: grid;
+             grid-template-columns: 22px 1fr 1fr 1fr 1fr 1fr 1fr 1fr !important;
+             grid-template-rows: 1fr !important;
+             height: 100%;
+             overflow: hidden;
+             width: 100%;
+             z-index: 1;
+         }
+         .wrapperButton {
+             align-items: center;
+             background: none;
+             /* background: $background-primary; */
+             background: $background-secondary;
+             color: $text-normal;
+             color: $icon-color-active;
+             cursor: pointer;
+             display: flex;
+             font-size: 10px;
+             font-weight: normal;
+             justify-content: center;
+             overflow: hidden;
+             text-align: center;
+             transform: rotate(180deg);
+             width: 100%;
+             writing-mode: vertical-lr;
+ 
+             &:hover {
+                 background: $background-modifier-hover;
+             }
+         }
+         .cell {
+             margin: 0;
+             
+             &.today {
+                 background: $background-modifier-active-hover !important;
+                 border: 1px solid hsla($interactive-accent-hsl, 0.25) !important;
+                 border-radius: 5px;
+             }
+         }
+         .prevMonth,
+         .nextMonth {
+             background: $background-secondary;
+         }
+     }
+     &[view="list"] {
+         .list {
+             border: 1px solid $nav-item-background-active;
+             border-radius: 5px;
+ 
+             .task {
+                 .inner {
+                     display: flex !important;
+                     flex-direction: row;
+                     flex-wrap: nowrap;
+                     padding: 0 10px;
+                     white-space: nowrap;
+                 }
+ 
+                 .note {
+                     display: inline-block;
+                     flex-grow: 0;
+                     flex-shrink: 0;
+                     width: 150px;
+                 }
+                 
+                 .description {
+                     flex-grow: 1;
+                     flex-shrink: 1;
+                     width: 100%;
+                 }
+ 
+                 &.done .note,
+                 &.done .description,
+                 &.cancelled .note,
+                 &.cancelled .description {
+                     color: $text-faint !important;
+                 }
+                 
+                 &,
+                 &.done,
+                 .note,
+                 &.done .note{
+                     background: transparent !important;
+                 }
+ 
+                 .note,
+                 .description {
+                     color: $task-color !important;
+                     font-size: 14px;
+                     line-clamp: 0 !important;
+                     overflow: hidden;
+                     text-overflow: ellipsis;
+                     white-space: nowrap !important;
+                 }
+             }
+         }
+ 
+         details {
+             /*background: $background-secondary;*/
+             border-radius: 5px;
+             border: 1px solid $nav-item-background-active;
+             display: block;
+             margin: 5px;
+ 
+             &.today {
+                 background: $background-modifier-active-hover;
+                 border: 1px solid hsla($interactive-accent-hsl, 0.25);
+ 
+                 summary {
+                     background: none;
+                     font-weight: bold;
+                 }
+ 
+                 .content {
+                     margin: 3px;
+                 }
+             }
+         }
+ 
+         summary {
+             background: $background-secondary;
+             border-radius: 5px;
+             padding: 0 10px;
+ 
+             span.weekNr {
+                 color: $text-faint;
+                 font-size: 11px;
+             }
+         }
+     }
+     &[view="list"] button.listView,
+     &[view="week"] button.weekView,
+     &[view="month"] button.monthView,
+     &.filter button.filter {
+         background: $background-modifier-active-hover;
+         svg {
+             stroke: $icon-color-active !important;
+         }
+     }
+     &[view="month"] .wrappers,
+     &[view="week"] .grid {
+         position: relative;
+     }
+     &[view="month"] .wrappers:before,
+     &[view="week"] .grid:before,
+     &[view="list"] .list:before {
+         color: $background-modifier-active-hover;
+         font-size: 120px;
+         font-weight: bold;
+         left: 50%;
+         position: absolute;
+         top: 50%;
+         transform: translate(-50%, -50%);
+         z-index: 0;
+     }
+     &[view="month"] .wrappers:before,
+     &[view="list"] .list:before {
+         content: attr(data-month);
+     }
+     @each $focus, $task in $focus-types {
+         &.#{$focus} {
+             .task {
+                 opacity: 0.25 !important;
+ 
+                 &.#{$task} {
+                     opacity: 1 !important;
+                 }
+             }
+         }
+     }
+ 
+ }
+ 
+ .iconStyle11 {
+     display: none !important;
+ }
+ 
+ $styles: (
+     1: (rows: repeat(6,1fr), cols: repeat(4,1fr)),
+     2: (rows: repeat(6,1fr), cols: repeat(4,1fr)),
+     3: (rows: repeat(7, 1fr), cols: 1fr),
+     4: (rows: 1fr, cols: repeat(7, 1fr)),
+     5: (rows: repeat(10, 1fr), cols: repeat(2, 1fr)),
+     6: (rows: repeat(10, 1fr), cols: repeat(3, 1fr)),
+     7: (rows: repeat(8, 1fr), cols: repeat(2, 1fr)),
+     8: (rows: repeat(5, 1fr), cols: repeat(3, 1fr)),
+     9: (rows: repeat(3, 1fr), cols: repeat(10, 1fr)),
+     10: (rows: repeat(3, 1fr), cols: repeat(10, 1fr)),
+     11: (rows: 1fr, cols: repeat(5, 1fr))
+ );
+ @each $style, $grid in $styles {
+     .tasksCalendar[view=week].style#{$style} .grid,
+     .iconStyle#{$style} {
+         grid-template-columns: map.get($grid, cols);
+         grid-template-rows: map.get($grid, rows);
+     }
+ }
+ @function grid-area($start-row, $start-col, $end-row, $end-col) {
+     @return #{$start-row} / #{$start-col} / #{$end-row} / #{$end-col};
+ }
+ @each $style, $areas in (
+     1: (1: (1 1 3 2), 2: (3 1 5 3), 3: (5 1 7 3), 4: (1 3 3 5), 5: (3 3 5 5), 6: (5 3 6 5), 7: (6 3 7 5)),
+     2: (1: (1 1 3 3), 2: (3 1 5 3), 3: (5 1 7 3), 4: (1 3 3 5), 5: (3 3 5 5), 6: (5 3 6 5), 7: (6 3 7 5)),
+     5: (1: (1 1 3 2), 2: (3 1 5 2), 3: (5 1 7 2), 4: (7 1 9 2), 5: (9 1 11 2), 6: (1 2 6 3), 7: (6 2 11 3)),
+     6: (1: (1 1 3 3), 2: (3 1 5 3), 3: (5 1 7 3), 4: (7 1 9 3), 5: (9 1 11 3), 6: (1 3 6 4), 7: (6 3 11 4)),
+     7: (1: (1 1 3 2), 2: (3 1 5 2), 3: (5 1 7 2), 4: (7 1 9 2), 5: (1 2 3 3), 6: (3 2 6 3), 7: (6 2 9 3)),
+     8: (1: (1 1 3 2), 2: (1 2 3 3), 3: (1 3 3 4), 4: (3 1 5 2), 5: (3 2 5 3), 6: (3 3 5 4), 7: (5 1 6 4)),
+     9: (1: (1 1 3 3), 2: (1 3 3 5), 3: (1 5 3 7), 4: (1 7 3 9), 5: (1 9 3 11), 6: (3 1 4 6), 7: (3 6 4 11)),
+     10: (1: (1 1 4 3), 2: (1 3 4 5), 3: (1 5 4 7), 4: (1 7 3 9), 5: (1 9 3 11), 6: (3 7 4 9), 7: (3 9 4 11))
+ ) {
+     @each $index, $area in $areas {
+         .tasksCalendar[view=week].style#{$style} .grid .cell:nth-child(#{$index}),
+         .iconStyle#{$style} .box:nth-child(#{$index}) {
+             grid-area: grid-area(list.nth($area, 1), list.nth($area, 2), list.nth($area, 3), list.nth($area, 4));
+         }
+     }
+ }
+ 
+ body{
+     &:not(.is-mobile) .tasksCalendar {
+         button.listView:hover,
+         button.weekView:hover,
+         button.monthView:hover,
+         button.previous:hover,
+         button.next:hover,
+         button.current:hover,
+         button.filter:hover,
+         button.statistic:hover {
+             background: $background-modifier-hover;
+         }
+         .statisticPopup li:not(.active):hover,
+         .weekViewContext li:not(.active):hover {
+             background: $background-modifier-hover;
+         }
+         .cellName:hover {
+             opacity: 1;
+         }
+         .task:hover {
+             opacity: 1;
+         }
+     }
+     &.theme-dark .tasksCalendar .task {
+         color: $light-task-text-color;
+ 
+         .note {
+             color: $light-task-text-color;
+         }
+     }
+     &.theme-light .tasksCalendar .task {
+         color: $dark-task-text-color;
+ 
+         .note {
+             color: $dark-task-text-color;
+         }
+     }
+     &.is-mobile .tasksCalendar {
+         .gridHead,
+         .cellName,
+         .task {
+             font-size: 9px;
+         }
+ 
+         &[view="week"]:not(.style4) .cellName,
+         &[view="week"]:not(.style4) .task {
+             font-size: 13px !important;
+         }
+         .statisticPopup li {
+             font-size: 13px !important;
+         }
+     }
+ }

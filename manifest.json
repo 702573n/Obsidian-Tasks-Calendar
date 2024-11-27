@@ -1,0 +1,11 @@
+{
+	"id": "tasks-calendar",
+	"name": "Tasks Calendar",
+	"version": "2.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "A custom view build with Obsidian-Dataview to display tasks from Obsidian-Tasks and from your daily notes in a highly customisable calendar with a wide variety of views",
+	"author": "702573N",
+	"authorUrl": "https://github.com/702573N",
+	"fundingUrl": "",
+	"isDesktopOnly": false
+}
