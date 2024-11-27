@@ -1,9 +1,9 @@
 import { App, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
-import { arrowLeftIcon, arrowRightIcon, filterIcon, monthIcon, weekIcon, listIcon } from 'src/Tools/Utils';
-import { cellTemplate, taskNumberTemplate } from 'src/Tools/Utils';
-import { getCurrent, getMeta, getTasks, setTaskContentContainer, updateCounters } from 'src/Tools/Utils';
-import { setStatisticPopUp, setWeekViewContext, setStatisticValues, removeExistingView } from 'src/Tools/Utils';
+import { arrowLeftIcon, arrowRightIcon, filterIcon, monthIcon, weekIcon, listIcon } from './Tools/Calendar';
+import { cellTemplate, taskNumberTemplate } from './Tools/Calendar';
+import { getCurrent, getMeta, getTasks, setTaskContentContainer, updateCounters } from './Tools/Calendar';
+import { setStatisticPopUp, setWeekViewContext, setStatisticValues, removeExistingView } from './Tools/Calendar';
 
 export default class Calendar {
     dv: any;
