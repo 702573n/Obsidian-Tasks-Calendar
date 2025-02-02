@@ -36,7 +36,7 @@ var tMonth = moment().format("M");
 var tDay = moment().format("d");
 var tYear = moment().format("YYYY");
 var tid = (new Date()).getTime();
-if (startPosition) { var selectedMonth = moment(startPosition, "YYYY-MM").date(1);  var selectedList = moment(startPosition, "YYYY-MM").date(1); var selectedWeek = moment(startPosition, "YYYY-ww").startOf("week") } else { var selectedMonth = moment(startPosition).date(1); var selectedWeek = moment(startPosition).startOf("week"); var selectedList = moment(startPosition).date(1); };
+if (startPosition) { var selectedMonth = moment(startPosition, "YYYY-MM").date(1);  var selectedList = moment(startPosition, "YYYY-MM").date(1); var selectedWeek = moment(startPosition, "YYYY-ww").startOf(firstDayOfWeek == "1" ? "isoweek" : "week") } else { var selectedMonth = moment(startPosition).date(1); var selectedWeek = moment(startPosition).startOf(firstDayOfWeek == "1" ? "isoweek" : "week"); var selectedList = moment(startPosition).date(1); };
 var selectedDate = eval("selected"+capitalize(view));
 var arrowLeftIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>';
 var arrowRightIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
@@ -206,7 +206,7 @@ function setTask(obj, cls) {
 	if (obj.due) { var relative = moment(obj.due).fromNow() } else { var relative = "" };
 	var noteFilename = getFilename(taskPath);
 	if (noteIcon) { noteFilename = noteIcon+"&nbsp;"+noteFilename } else { noteFilename = taskIcon+"&nbsp;"+noteFilename; cls += " noNoteIcon" };
-	var taskSubpath = obj.header.subpath;
+	var taskSubpath = "Tasks"; //obj.header.subpath; // EDIT: remove task subpath and replace with top header
 	var taskLine = taskSubpath ? taskPath+"#"+taskSubpath : taskPath;
  	if (noteColor && textColor) {
  		var style = "--task-background:"+noteColor+"33;--task-color:"+noteColor+";--dark-task-text-color:"+textColor+";--light-task-text-color:"+textColor;
@@ -278,7 +278,7 @@ function setButtonEvents() {
 				selectedDate = moment(selectedDate).subtract(1, "months");
 				getMonth(tasks, selectedDate);
 			} else if (activeView == "week") {
-				selectedDate = moment(selectedDate).subtract(7, "days").startOf("week");
+				selectedDate = moment(selectedDate).subtract(7, "days").startOf(firstDayOfWeek == "1" ? "isoweek" : "week");
 				getWeek(tasks, selectedDate);
 			} else if (activeView == "list") {
 				selectedDate = moment(selectedDate).subtract(1, "months");
@@ -289,7 +289,7 @@ function setButtonEvents() {
 				selectedDate = moment().date(1);
 				getMonth(tasks, selectedDate);
 			} else if (activeView == "week") {
-				selectedDate = moment().startOf("week");
+				selectedDate = moment().startOf(firstDayOfWeek == "1" ? "isoweek" : "week");
 				getWeek(tasks, selectedDate);
 			} else if (activeView == "list") {
 				selectedDate = moment().date(1);
@@ -300,7 +300,7 @@ function setButtonEvents() {
 				selectedDate = moment(selectedDate).add(1, "months");
 				getMonth(tasks, selectedDate);
 			} else if (activeView == "week") {
-				selectedDate = moment(selectedDate).add(7, "days").startOf("week");
+				selectedDate = moment(selectedDate).add(7, "days").startOf(firstDayOfWeek == "1" ? "isoweek" : "week");
 				getWeek(tasks, selectedDate);
 			} else if (activeView == "list") {
 				selectedDate = moment(selectedDate).add(1, "months");
@@ -340,9 +340,9 @@ function setButtonEvents() {
 				};
 			} else {
 				if (moment().format("MM-YYYY") != moment(selectedDate).format("MM-YYYY")) {
-					selectedDate = moment(selectedDate).startOf("month").startOf("week");
+					selectedDate = moment(selectedDate).startOf("month").startOf(firstDayOfWeek == "1" ? "isoweek" : "week");
 				} else {
-					selectedDate = moment().startOf("week");
+					selectedDate = moment().startOf(firstDayOfWeek == "1" ? "isoweek" : "week");
 				};
 				getWeek(tasks, selectedDate);
 			};
@@ -360,7 +360,7 @@ function setWrapperEvents() {
 	rootNode.querySelectorAll('.wrapperButton').forEach(wBtn => wBtn.addEventListener('click', (() => {
 		var week = wBtn.getAttribute("data-week");
 		var year = wBtn.getAttribute("data-year");
-		selectedDate = moment(moment(year).add(week, "weeks")).startOf("week");
+		selectedDate = moment(moment(year).add(week, "weeks")).startOf(firstDayOfWeek == "1" ? "isoweek" : "week");
 		rootNode.querySelector(`#tasksCalendar${tid} .grid`).remove();
 		getWeek(tasks, selectedDate);
 	})));
